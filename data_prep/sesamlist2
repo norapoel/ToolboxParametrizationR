@@ -1,0 +1,66 @@
+
+NPRINT=4
+
+# Definition of control vector
+# ----------------------------
+# Number of control variable
+VAREND=1
+# Variable 1: sea surface height
+VAR_NAM-1=SSH
+VAR_DIM-1=2
+
+# Define observed variables
+DTA_ACT-1=.TRUE.
+
+# Define observations
+OBSNDBS-1=1
+OBS_NAM-1:1=SWOT
+
+# Mask files
+VARFMSK=mask.nc
+VAREMSK=4
+VARVMSK=0.
+
+DTAFMSK=mask.nc
+DTAEMSK=4
+DTAVMSK=0.
+
+# Grid localisation
+VARFGRD=mask.nc
+VAREGRD=4
+VARNGRD=3
+DTAFGRD=mask.nc
+DTAEGRD=4
+DTANGRD=3
+
+# Description of the variables in the .nc files
+# sea surface height
+VARINAM-1=gridT
+VARONAM-1=gridT
+VARIFIL-1=sossheig
+VAROFIL-1=sossheig
+DTAIFIL-1=sossheig
+DTAOFIL-1=sossheig
+VAROPOS-1=0101
+
+# Description of the dimensions and grid variables
+VARXDIM=x
+VARYDIM=y
+VARZDIM=none
+VARTDIM=time_counter
+VARXNAM=nav_lon
+VARYNAM=nav_lat
+DTAXNAM=nav_lon
+DTAYNAM=nav_lat
+DTAZNAM=deptht 
+
+# Description of observation database file
+OBSIFIL-1:1=ssh
+OBSXDIM-1:1=nC
+OBSYDIM-1:1=time
+OBSZDIM-1:1=none
+OBSTDIM-1:1=none
+OBSXNAM-1:1=lon
+OBSYNAM-1:1=lat
+OBSZNAM-1:1=none
+OBSTNAM-1:1=none
