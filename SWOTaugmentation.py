@@ -35,22 +35,22 @@ def read_ens(ensemble, varname='ssh_model'):
         raise NameError('Ensemble not correctly named - see http://pp.ige-grenoble.fr/pageperso/brankarj/SESAM/ for naming input files')
     enssizelist = re.findall('\\d{4,4}', ensname)
     enssize = int(enssizelist[0])
-    membername1 = ensemble + '/vctgridSWOT0001.nc'
+    membername1 = ensemble + '/vctgridSWOT0001_denoised.nc'#_denoised
     with xr.open_dataset(membername1, mask_and_scale=False) as (dsmember1):
         time = dsmember1.time.size
         nc = dsmember1.nC.size
         lat = dsmember1.lat[:, :].values
         lon = dsmember1.lon[:, :].values
         if varname == 'ssh_obs':
-            fill_value = dsmember1.ssh_obs._FillValue
+            fill_value = dsmember1.ssh_obs.fill_value#_FillValue # we used with data written with SWOTdenoise, eventually change to ssh_obs.fill_value #_obs
         else:
-            fill_value = dsmember1.ssh_model._FillValue
+            fill_value = dsmember1.ssh_model.fill_value#_FillValue # we used with data written with SWOTdenoise, eventually change to ssh_obs.fill_value
     ssh_all = np.zeros([enssize, time, nc])
     for k in range(1, enssize + 1):
-        membername = (ensemble + '/vctgridSWOT{:04d}.nc').format(k)
+        membername = (ensemble + '/vctgridSWOT{:04d}_denoised.nc').format(k)
         with xr.open_dataset(membername, mask_and_scale=False) as (ds):
             if varname == 'ssh_obs':
-                buf = ds.ssh_obs[:, :]
+                buf = ds.ssh_obs[:, :]#_obs
             else:
                 buf = ds.ssh_model[:, :]
             ssh_all[k - 1, :, :] = buf
@@ -79,7 +79,7 @@ def read_obs(observation):
         lon = ds.lon[:, :].values
         ssh_obs = np.zeros([time, nc])
         ssh_obs[:, :] = ds.ssh_obs[:, :]
-        fill_value = ds.ssh_obs._FillValue
+        fill_value = ds.ssh_obs._FillValue # we used with data written with SWOTdenoise, eventually change to ssh_obs.fill_value
         ssh_obs = ma.masked_where(ssh_obs == fill_value, ssh_obs)
         ma.set_fill_value(ssh_obs, fill_value)
     return (
@@ -334,12 +334,13 @@ def write_Rplus(observation, varC, alpha0a, alpha0c, alpha1a, alpha1c, alpha2a, 
     with xr.open_dataset(observation) as (ds):
         dimtime = ds.time.size
         dimnc = ds.nC.size
-    row0 = varC * alpha0a
+    '''To be debugged. Compare with 20180418-np-parametrization-R.ipynb to see how we generated TRT.'''
+    row0 = np.sqrt((1/alpha0c)*(1/varC)) #Second version: np.sqrt((1/alpha0c)*varC) #First version: varC * alpha0a
     R0 = np.tile(row0, (dimtime, 1))
-    row1c = varC * alpha1c
+    row1c = np.sqrt((1/alpha1c)*(1/varC)) #Second version: np.sqrt((1/alpha1c)*varC) #First version: varC * alpha1c
     row1c = np.delete(row1c, dimnc - 1)
     R1c = np.tile(row1c, (dimtime, 1))
-    row2c = varC * alpha2c
+    row2c = np.sqrt((1/alpha2c)*(1/varC)) #Second version: np.sqrt((1/alpha2c)*varC) #First version: varC * alpha2c
     row2c = np.delete(row2c, [0, dimnc - 1])
     R2c = np.tile(row2c, (dimtime, 1))
     ratio1 = alpha1a / alpha0a
@@ -348,8 +349,10 @@ def write_Rplus(observation, varC, alpha0a, alpha0c, alpha1a, alpha1c, alpha2a, 
     ratio2 = alpha2a / alpha0a
     row2a = row0 * ratio2
     R2a = np.tile(row2a, (dimtime - 2, 1))
+    
     obsname = observation.split('/')[-1]
     outdir = observation.split(obsname)[0]
+    
     obsname = 'R_gridSWOT.nc'
     ds0 = Dataset(outdir + obsname, 'w')
     time = ds0.createDimension('time', dimtime)
